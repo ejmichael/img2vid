@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+rq
+redis
+python-multipart
+# Add PyTorch and Diffusers separately if needed for specific hardware
+torch
+diffusers
+transformers
+imageio
+imageio-ffmpeg
+pillow
+python-dotenv
+accelerate
+torchvision
