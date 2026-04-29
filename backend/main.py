@@ -95,4 +95,5 @@ if __name__ == "__main__":
     if frontend_path:
         app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
     
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
