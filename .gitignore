@@ -13,10 +13,8 @@ backend/__pycache__.zip
 
 # Frontend
 frontend/node_modules/
-frontend/dist/
-# Note: we WANT frontend/dist/ in this specific case because HF needs it to build,
-# UNLESS we build it in the Dockerfile. My Dockerfile copies frontend/dist/
-# so we SHOULD include it in the push.
+# Note: we WANT frontend/dist/ in this specific case because HF needs it to build
+# so it's NOT ignored anymore.
 
 # OS junk
 .DS_Store
