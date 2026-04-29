@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Project specific
+*.zip
+backend/inputs/
+backend/outputs/
+backend/__pycache__.zip
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+# Note: we WANT frontend/dist/ in this specific case because HF needs it to build,
+# UNLESS we build it in the Dockerfile. My Dockerfile copies frontend/dist/
+# so we SHOULD include it in the push.
+
+# OS junk
+.DS_Store
+Thumbs.db

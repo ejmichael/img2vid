@@ -1,0 +1,14 @@
+# Fix for Windows and Linux compatibility
+torch
+torchvision
+diffusers>=0.30.0
+transformers>=4.44.0
+accelerate>=0.33.0
+imageio[ffmpeg]
+pillow
+python-dotenv
+rq
+redis
+fastapi
+uvicorn
+python-multipart
