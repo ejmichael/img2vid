@@ -36,6 +36,7 @@ class ImageToVideoModel:
             self.pipeline = LTXPipeline.from_pretrained(
                 self.model_id, 
                 torch_dtype=torch.bfloat16 if self.device == "cuda" else torch.float32,
+                low_cpu_mem_usage=True, # Critical safety feature for Hugging Face RAM
             )
             
             if self.device == "cuda":
