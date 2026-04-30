@@ -12,6 +12,10 @@ class ImageToVideoModel:
         self.model_id = model_id
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"DEBUG: Torch CUDA available: {torch.cuda.is_available()}")
+        if torch.cuda.is_available():
+            print(f"DEBUG: GPU Name: {torch.cuda.get_device_name(0)}")
+            print(f"DEBUG: Memory: {torch.cuda.get_max_assigned_generator_memory() if hasattr(torch.cuda, 'get_max_assigned_generator_memory') else 'N/A'}")
 
     def load_model(self):
         """
