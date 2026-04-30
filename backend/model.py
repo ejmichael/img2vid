@@ -1,6 +1,8 @@
 import os
 import torch
 import random
+import diffusers
+print(f"DEBUG: Diffusers version: {diffusers.__version__}")
 from diffusers import LTXVideoPipeline
 from PIL import Image
 import numpy as np

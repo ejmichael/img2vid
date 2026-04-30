@@ -19,10 +19,12 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Copy requirements and install
 COPY backend/requirements.txt ./backend/
 RUN pip3 install --no-cache-dir -r backend/requirements.txt
-RUN pip3 install -U diffusers transformers accelerate
 
 # Force install matching Torch version for CUDA 12.1
 RUN pip3 install --force-reinstall torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+
+# Upgrade AI libraries AFTER torch to prevent downgrades
+RUN pip3 install -U diffusers transformers accelerate
 
 # Copy project files
 COPY backend/ ./backend/
