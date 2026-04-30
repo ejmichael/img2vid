@@ -1,118 +1,109 @@
 import os
 import torch
 import random
-from diffusers import StableVideoDiffusionPipeline
+from diffusers import WanPipeline
 from PIL import Image
 import numpy as np
 import imageio
 
 class ImageToVideoModel:
-    def __init__(self, model_id="stabilityai/stable-video-diffusion-img2vid-xt-1-1"):
-        # We use SVD 1.1 which is the most breathtaking for image-to-video
+    def __init__(self, model_id="Wan-AI/Wan2.1-I2V-1.3B-720P-Diffusers"):
+        # Wan-2.1 is the new GOAT for open video generation
         self.model_id = model_id
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"DEBUG: Torch CUDA available: {torch.cuda.is_available()}")
-        if torch.cuda.is_available():
-            print(f"DEBUG: GPU Name: {torch.cuda.get_device_name(0)}")
-            print(f"DEBUG: Memory: {torch.cuda.get_max_assigned_generator_memory() if hasattr(torch.cuda, 'get_max_assigned_generator_memory') else 'N/A'}")
 
     def load_model(self):
         """
-        Loads Stable Video Diffusion.
-        Disables the safety checker for unrestricted usage.
+        Loads Wan-2.1-I2V.
         """
-        if self.pipeline and self.pipeline != "mock":
+        if self.pipeline:
             return
 
-        print(f"Loading SVD ({self.model_id}) on {self.device}...")
+        print(f"Loading Wan-2.1 ({self.model_id}) on {self.device}...")
         
         try:
-            # 1. Try official repo with token
-            print(f">>> REAL AI: Attempting to load official {self.model_id}...")
-            self.pipeline = StableVideoDiffusionPipeline.from_pretrained(
+            self.pipeline = WanPipeline.from_pretrained(
                 self.model_id, 
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 variant="fp16" if self.device == "cuda" else None,
-                token=True # Forces use of the token you just logged in with
             )
+            
+            if self.device == "cuda":
+                self.pipeline.to(self.device)
+                # Wan is heavy, so we use cpu offload for T4 compatibility
+                self.pipeline.enable_model_cpu_offload()
+            
+            print(">>> REAL AI: Wan-2.1 loaded successfully.")
         except Exception as e:
-            print(f">>> REAL AI: Official repo failed ({e}). Trying community mirror...")
-            try:
-                # 2. Try community mirror (not gated)
-                mirror_id = "vdo/stable-video-diffusion-img2vid-xt-1-1"
-                self.pipeline = StableVideoDiffusionPipeline.from_pretrained(
-                    mirror_id,
-                    torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-                    variant="fp16" if self.device == "cuda" else None,
-                )
-            except Exception as mirror_e:
-                print(f"CRITICAL ERROR LOADING MODELS: {mirror_e}")
-                import traceback
-                traceback.print_exc()
-                self.pipeline = "mock"
-                return
+            print(f"CRITICAL ERROR LOADING MODEL: {e}")
+            import traceback
+            traceback.print_exc()
+            self.pipeline = "mock"
 
-        if self.device == "cuda":
-            self.pipeline.to(self.device)
-            # Re-enabling offload because T4 (15GB) is tight for SVD-XT
-            self.pipeline.enable_model_cpu_offload()
-        
-        print(">>> REAL AI: SVD loaded successfully.")
-
-    def generate(self, image_path: str, output_path: str, prompt=None, num_frames=25):
+    def generate(self, image_path: str, output_path: str, prompt="", num_frames=81):
         """
-        Generates animation based on the input image.
+        Generates animation based on the input image using Wan-2.1.
+        Wan-2.1 defaults to 81 frames (~5 seconds).
         """
         if not self.pipeline:
             raise Exception("Model not loaded. Call load_model() first.")
 
         if self.pipeline == "mock":
-            print("!!! WARNING: FAILED TO LOAD REAL AI. USING MOCK ZOOM INSTEAD !!!")
-            return self._generate_mock(image_path, output_path, num_frames)
+            return self._generate_mock(image_path, output_path)
 
-        print(f">>> REAL AI: Generating SVD animation for {image_path}...")
+        print(f">>> REAL AI: Generating Wan-2.1 animation for {image_path}...")
         
-        # 1. Load image
+        # 1. Load and prepare image
         img = Image.open(image_path).convert("RGB")
-        img = img.resize((1024, 576)) # SVD standard resolution
+        # Wan-2.1-I2V-1.3B usually handles 720p (1280x720) or 480p well
+        # We'll stick to a standard size for T4 VRAM safety
+        img = img.resize((832, 480))
         
-        # 2. Random Seed for unique results
+        # 2. Random Seed
         seed = random.randint(0, 1000000)
         generator = torch.manual_seed(seed)
         print(f">>> REAL AI: Using seed: {seed}")
 
         # 3. Run Pipeline
+        # Wan-2.1 uses a combined prompt + image interface
+        full_prompt = prompt if prompt else "cinematic high quality motion"
+        
         with torch.no_grad():
-            frames = self.pipeline(
-                img, 
-                decode_chunk_size=2, 
-                num_frames=num_frames, 
-                motion_bucket_id=127, # LOWERED from 180 to reduce "melting" artifacts
-                noise_aug_strength=0.02, # LOWERED from 0.1 to keep details sharp
+            output = self.pipeline(
+                prompt=full_prompt,
+                image=img,
+                num_frames=num_frames, # 81 is standard
+                height=480,
+                width=832,
+                num_inference_steps=30,
+                guidance_scale=5.0,
                 generator=generator
-            ).frames[0]
+            )
+            frames = output.frames[0]
 
         # 4. Save to MP4
+        # Wan generates at 16 FPS usually, but we can set 24 for smoothness
         frames_np = [np.array(f) for f in frames]
-        imageio.mimsave(output_path, frames_np, fps=25)
+        imageio.mimsave(output_path, frames_np, fps=16)
         
         print(f"AI Video saved to {output_path}")
         return output_path
 
-    def _generate_mock(self, image_path: str, output_path: str, num_frames=16):
+    def _generate_mock(self, image_path, output_path):
         """Fallback mock animation logic"""
         print("Using Mock Animation (No GPU/Real Model found)")
-        img = Image.open(image_path).convert("RGB").resize((512, 512))
+        img = Image.open(image_path).convert("RGB").resize((480, 480))
         frames = []
         img_np = np.array(img)
-        for i in range(num_frames):
+        for i in range(25):
             zoom = 1 + (i * 0.01)
             h, w = img_np.shape[:2]
             curr_h, curr_w = int(h / zoom), int(w / zoom)
             y1, x1 = (h - curr_h) // 2, (w - curr_w) // 2
             cropped = img_np[y1:y1+curr_h, x1:x1+curr_w]
-            frame = Image.fromarray(cropped).resize((512, 512))
+            frame = Image.fromarray(cropped).resize((480, 480))
             frames.append(np.array(frame))
         imageio.mimsave(output_path, frames, fps=8)
         return output_path
