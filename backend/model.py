@@ -7,8 +7,9 @@ import numpy as np
 import imageio
 
 class ImageToVideoModel:
-    def __init__(self, model_id="THUDM/CogVideoX-5b-I2V"):
-        # CogVideoX-5B is the industry standard for realistic open video gen
+    def __init__(self, model_id="THUDM/CogVideoX-2b-I2V"):
+        # CogVideoX-2B is the best "Small but Mighty" model for realistic video.
+        # It fits perfectly on the T4 GPU and is much faster than the 5B version.
         self.model_id = model_id
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
