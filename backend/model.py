@@ -37,7 +37,6 @@ class ImageToVideoModel:
                 self.model_id, 
                 torch_dtype=torch.bfloat16 if self.device == "cuda" else torch.float32,
                 low_cpu_mem_usage=True, # Critical safety feature for Hugging Face RAM
-                variant="fp16", # Forces download of half-size weights directly, bypassing the 15GB RAM limit
             )
             
             if self.device == "cuda":
