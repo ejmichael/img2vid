@@ -3,7 +3,13 @@ import torch
 import random
 import diffusers
 print(f"DEBUG: Diffusers version: {diffusers.__version__}")
-from diffusers import LTXVideoPipeline
+# The official class name in latest diffusers is LTXPipeline
+try:
+    from diffusers import LTXPipeline
+except ImportError:
+    # Older community implementation support
+    from diffusers import LTXVideoPipeline as LTXPipeline
+
 from PIL import Image
 import numpy as np
 import imageio
@@ -27,7 +33,7 @@ class ImageToVideoModel:
         print(f"Loading LTX-Video ({self.model_id}) on {self.device}...")
         
         try:
-            self.pipeline = LTXVideoPipeline.from_pretrained(
+            self.pipeline = LTXPipeline.from_pretrained(
                 self.model_id, 
                 torch_dtype=torch.bfloat16 if self.device == "cuda" else torch.float32,
             )
