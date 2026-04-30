@@ -42,6 +42,7 @@ class ImageToVideoModel:
                 self.model_id, 
                 quantization_config=quant_config,
                 torch_dtype=torch.float16,
+                low_cpu_mem_usage=True, # Critical to prevent OOM kills on A10G Small RAM
             )
             
             # Offloading is still recommended for 14B to ensure 24GB safety
