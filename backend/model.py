@@ -1,14 +1,15 @@
 import os
 import torch
 import random
-from diffusers import I2VGenXLPipeline
+from diffusers import LTXVideoPipeline
 from PIL import Image
 import numpy as np
 import imageio
 
 class ImageToVideoModel:
-    def __init__(self, model_id="ali-vilab/i2vgen-xl"):
-        # I2VGen-XL is a high-fidelity, realistic image-to-video model from Alibaba
+    def __init__(self, model_id="Lightricks/LTX-Video"):
+        # LTX-Video is the new standard for realistic, efficient video generation.
+        # It handles motion and realism significantly better than older UNet models.
         self.model_id = model_id
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -16,34 +17,35 @@ class ImageToVideoModel:
 
     def load_model(self):
         """
-        Loads I2VGen-XL.
+        Loads LTX-Video.
         """
         if self.pipeline:
             return
 
-        print(f"Loading I2VGen-XL ({self.model_id}) on {self.device}...")
+        print(f"Loading LTX-Video ({self.model_id}) on {self.device}...")
         
         try:
-            self.pipeline = I2VGenXLPipeline.from_pretrained(
+            self.pipeline = LTXVideoPipeline.from_pretrained(
                 self.model_id, 
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-                variant="fp16" if self.device == "cuda" else None,
+                torch_dtype=torch.bfloat16 if self.device == "cuda" else torch.float32,
             )
             
             if self.device == "cuda":
                 self.pipeline.to(self.device)
+                # Helps with T4 (15GB) memory
+                self.pipeline.enable_model_cpu_offload()
             
-            print(">>> REAL AI: I2VGen-XL Loaded successfully.")
+            print(">>> REAL AI: LTX-Video Loaded successfully.")
         except Exception as e:
             print(f"CRITICAL ERROR LOADING MODEL: {e}")
             import traceback
             traceback.print_exc()
             self.pipeline = "mock"
 
-    def generate(self, image_path: str, output_path: str, prompt="", num_frames=16):
+    def generate(self, image_path: str, output_path: str, prompt="", num_frames=81):
         """
-        Generates animation using I2VGen-XL.
-        Default is 16 frames.
+        Generates animation using LTX-Video.
+        LTX-Video handles 0.5s to 5s generations. 81 frames is ~3-4 seconds.
         """
         if not self.pipeline:
             raise Exception("Model not loaded. Call load_model() first.")
@@ -51,12 +53,13 @@ class ImageToVideoModel:
         if self.pipeline == "mock":
             return self._generate_mock(image_path, output_path)
 
-        print(f">>> REAL AI: Generating I2VGen-XL animation for {image_path}...")
+        print(f">>> REAL AI: Generating LTX-Video animation for {image_path}...")
         
         # 1. Load and prepare image
         img = Image.open(image_path).convert("RGB")
-        # I2VGen-XL prefers 704x448
-        img = img.resize((704, 448))
+        # LTX-Video prefers multiples of 32. 704x480 is a good medium.
+        # It also handles 512x512 or 768x512.
+        img = img.resize((768, 512))
         
         # 2. Random Seed
         seed = random.randint(0, 1000000)
@@ -64,21 +67,25 @@ class ImageToVideoModel:
         print(f">>> REAL AI: Using seed: {seed}")
 
         # 3. Run Pipeline
-        full_prompt = prompt if prompt else "cinematic high quality motion"
+        full_prompt = prompt if prompt else "cinematic high quality motion, realistic"
         
         with torch.no_grad():
-            # I2VGen-XL uses 'image' as input
-            frames = self.pipeline(
+            # LTX-Video I2V uses image as the 'image' argument
+            output = self.pipeline(
                 prompt=full_prompt,
                 image=img,
-                num_inference_steps=50, # High quality
-                guidance_scale=9.0,
+                num_frames=num_frames, # 81 frames
+                width=768,
+                height=512,
+                num_inference_steps=25,
+                guidance_scale=3.0,
                 generator=generator
-            ).frames[0]
+            )
+            frames = output.frames[0]
 
         # 4. Save to MP4
         frames_np = [np.array(f) for f in frames]
-        imageio.mimsave(output_path, frames_np, fps=8)
+        imageio.mimsave(output_path, frames_np, fps=24) # Smooth 24fps
         
         print(f"AI Video saved to {output_path}")
         return output_path
