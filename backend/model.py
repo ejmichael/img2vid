@@ -25,22 +25,27 @@ class ImageToVideoModel:
         print(f"Loading Wan-2.1 14B ({self.model_id}) with 4-bit quantization...")
         
         try:
-            from transformers import BitsAndBytesConfig
-            quantization_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
+            from diffusers.quantizers import PipelineQuantizationConfig
+            
+            # Direct quantization config for Wan-2.1 in Diffusers
+            pipeline_quant_config = PipelineQuantizationConfig(
+                quant_backend="bitsandbytes_4bit",
+                quant_kwargs={
+                    "load_in_4bit": True, 
+                    "bnb_4bit_compute_dtype": torch.float16,
+                    "bnb_4bit_use_double_quant": True,
+                    "bnb_4bit_quant_type": "nf4"
+                },
+                components_to_quantize=["transformer"],
             )
             
             self.pipeline = WanPipeline.from_pretrained(
                 self.model_id, 
-                quantization_config=quantization_config,
+                quantization_config=pipeline_quant_config,
                 torch_dtype=torch.float16,
-                device_map="auto" # Helps with 4-bit loading
             )
             
-            print(">>> REAL AI: Wan-2.1 14B Loaded Successfully in 4-bit Mode.")
+            print(">>> REAL AI: Wan-2.1 14B Loaded Successfully with PipelineQuantization.")
         except Exception as e:
             print(f"CRITICAL ERROR LOADING MODEL: {e}")
             import traceback
