@@ -5,6 +5,7 @@ diffusers>=0.31.0
 transformers>=4.48.0
 accelerate>=1.1.0
 sentencepiece
+bitsandbytes
 imageio[ffmpeg]
 pillow
 python-dotenv

@@ -7,8 +7,9 @@ import numpy as np
 import imageio
 
 class ImageToVideoModel:
-    def __init__(self, model_id="Wan-AI/Wan2.1-I2V-1.3B-720P-Diffusers"):
-        # Wan-2.1 is the new GOAT for open video generation
+    def __init__(self, model_id="Wan-AI/Wan2.1-I2V-14B-720P-Diffusers"):
+        # The 14B model is the King of Realism. 
+        # We use 4-bit quantization to fit this 28GB monster into a 15GB T4 GPU.
         self.model_id = model_id
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -16,26 +17,30 @@ class ImageToVideoModel:
 
     def load_model(self):
         """
-        Loads Wan-2.1-I2V.
+        Loads Wan-2.1-I2V-14B with 4-bit quantization.
         """
         if self.pipeline:
             return
 
-        print(f"Loading Wan-2.1 ({self.model_id}) on {self.device}...")
+        print(f"Loading Wan-2.1 14B ({self.model_id}) with 4-bit quantization...")
         
         try:
-            self.pipeline = WanPipeline.from_pretrained(
-                self.model_id, 
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-                variant="fp16" if self.device == "cuda" else None,
+            from transformers import BitsAndBytesConfig
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4",
             )
             
-            if self.device == "cuda":
-                self.pipeline.to(self.device)
-                # Wan is heavy, so we use cpu offload for T4 compatibility
-                self.pipeline.enable_model_cpu_offload()
+            self.pipeline = WanPipeline.from_pretrained(
+                self.model_id, 
+                quantization_config=quantization_config,
+                torch_dtype=torch.float16,
+                device_map="auto" # Helps with 4-bit loading
+            )
             
-            print(">>> REAL AI: Wan-2.1 loaded successfully.")
+            print(">>> REAL AI: Wan-2.1 14B Loaded Successfully in 4-bit Mode.")
         except Exception as e:
             print(f"CRITICAL ERROR LOADING MODEL: {e}")
             import traceback
