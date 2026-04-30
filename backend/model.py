@@ -1,15 +1,14 @@
 import os
 import torch
 import random
-from diffusers import WanPipeline
+from diffusers import CogVideoXImageToVideoPipeline
 from PIL import Image
 import numpy as np
 import imageio
 
 class ImageToVideoModel:
-    def __init__(self, model_id="Wan-AI/Wan2.1-I2V-14B-720P-Diffusers"):
-        # The 14B model is the King of Realism. 
-        # We use 4-bit quantization to fit this 28GB monster into a 15GB T4 GPU.
+    def __init__(self, model_id="THUDM/CogVideoX-5b-I2V"):
+        # CogVideoX-5B is the industry standard for realistic open video gen
         self.model_id = model_id
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -17,45 +16,36 @@ class ImageToVideoModel:
 
     def load_model(self):
         """
-        Loads Wan-2.1-I2V-14B with 4-bit quantization.
+        Loads CogVideoX-5B-I2V.
         """
         if self.pipeline:
             return
 
-        print(f"Loading Wan-2.1 14B ({self.model_id}) with 4-bit quantization...")
+        print(f"Loading CogVideoX ({self.model_id}) on {self.device}...")
         
         try:
-            from diffusers.quantizers import PipelineQuantizationConfig
-            
-            # Direct quantization config for Wan-2.1 in Diffusers
-            pipeline_quant_config = PipelineQuantizationConfig(
-                quant_backend="bitsandbytes_4bit",
-                quant_kwargs={
-                    "load_in_4bit": True, 
-                    "bnb_4bit_compute_dtype": torch.float16,
-                    "bnb_4bit_use_double_quant": True,
-                    "bnb_4bit_quant_type": "nf4"
-                },
-                components_to_quantize=["transformer"],
-            )
-            
-            self.pipeline = WanPipeline.from_pretrained(
+            self.pipeline = CogVideoXImageToVideoPipeline.from_pretrained(
                 self.model_id, 
-                quantization_config=pipeline_quant_config,
-                torch_dtype=torch.float16,
+                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
             )
             
-            print(">>> REAL AI: Wan-2.1 14B Loaded Successfully with PipelineQuantization.")
+            if self.device == "cuda":
+                self.pipeline.to(self.device)
+                # Essential for T4 (15GB) memory safety
+                self.pipeline.enable_model_cpu_offload()
+                # Optional: self.pipeline.enable_sequential_cpu_offload() for even less VRAM
+            
+            print(">>> REAL AI: CogVideoX Loaded successfully.")
         except Exception as e:
             print(f"CRITICAL ERROR LOADING MODEL: {e}")
             import traceback
             traceback.print_exc()
             self.pipeline = "mock"
 
-    def generate(self, image_path: str, output_path: str, prompt="", num_frames=81):
+    def generate(self, image_path: str, output_path: str, prompt="", num_frames=49):
         """
-        Generates animation based on the input image using Wan-2.1.
-        Wan-2.1 defaults to 81 frames (~5 seconds).
+        Generates animation using CogVideoX.
+        CogVideoX defaults to 49 frames (~6 seconds at 8fps).
         """
         if not self.pipeline:
             raise Exception("Model not loaded. Call load_model() first.")
@@ -63,13 +53,12 @@ class ImageToVideoModel:
         if self.pipeline == "mock":
             return self._generate_mock(image_path, output_path)
 
-        print(f">>> REAL AI: Generating Wan-2.1 animation for {image_path}...")
+        print(f">>> REAL AI: Generating CogVideoX animation for {image_path}...")
         
         # 1. Load and prepare image
         img = Image.open(image_path).convert("RGB")
-        # Wan-2.1-I2V-1.3B usually handles 720p (1280x720) or 480p well
-        # We'll stick to a standard size for T4 VRAM safety
-        img = img.resize((832, 480))
+        # CogVideoX 5B I2V standard resolution is 720x480 or similar
+        img = img.resize((720, 480))
         
         # 2. Random Seed
         seed = random.randint(0, 1000000)
@@ -77,26 +66,21 @@ class ImageToVideoModel:
         print(f">>> REAL AI: Using seed: {seed}")
 
         # 3. Run Pipeline
-        # Wan-2.1 uses a combined prompt + image interface
         full_prompt = prompt if prompt else "cinematic high quality motion"
         
         with torch.no_grad():
-            output = self.pipeline(
+            frames = self.pipeline(
                 prompt=full_prompt,
                 image=img,
-                num_frames=num_frames, # 81 is standard
-                height=480,
-                width=832,
+                num_frames=num_frames,
                 num_inference_steps=30,
-                guidance_scale=5.0,
+                guidance_scale=6.0,
                 generator=generator
-            )
-            frames = output.frames[0]
+            ).frames[0]
 
         # 4. Save to MP4
-        # Wan generates at 16 FPS usually, but we can set 24 for smoothness
         frames_np = [np.array(f) for f in frames]
-        imageio.mimsave(output_path, frames_np, fps=16)
+        imageio.mimsave(output_path, frames_np, fps=8)
         
         print(f"AI Video saved to {output_path}")
         return output_path
