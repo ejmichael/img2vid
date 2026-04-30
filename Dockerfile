@@ -32,6 +32,7 @@ RUN chmod +x start.sh
 # Environment
 ENV REDIS_URL=redis://localhost:6379
 ENV PORT=7860
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # HF Spaces requires port 7860
 EXPOSE 7860

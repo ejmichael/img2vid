@@ -55,6 +55,8 @@ class ImageToVideoModel:
 
         if self.device == "cuda":
             self.pipeline.to(self.device)
+            # Re-enabling offload because T4 (15GB) is tight for SVD-XT
+            self.pipeline.enable_model_cpu_offload()
         
         print(">>> REAL AI: SVD loaded successfully.")
 
@@ -84,7 +86,7 @@ class ImageToVideoModel:
         with torch.no_grad():
             frames = self.pipeline(
                 img, 
-                decode_chunk_size=8, 
+                decode_chunk_size=2, 
                 num_frames=num_frames, 
                 motion_bucket_id=180, # INCREASED from 127 for more motion
                 noise_aug_strength=0.1, # Increased for more variety
