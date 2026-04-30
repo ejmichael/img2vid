@@ -54,7 +54,7 @@ async def generate_video(
     # The function 'process_image_job' is imported from worker but we use string path for RQ if needed,
     # or just import it here.
     from worker import process_image_job
-    job = job_queue.enqueue(process_image_job, image_path, job_id, prompt, job_id=job_id, job_timeout=600)
+    job = job_queue.enqueue(process_image_job, image_path, job_id, prompt, job_id=job_id, job_timeout=3600)
     
     return {"job_id": job_id}
 
