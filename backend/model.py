@@ -88,14 +88,14 @@ class ImageToVideoModel:
                 img, 
                 decode_chunk_size=2, 
                 num_frames=num_frames, 
-                motion_bucket_id=180, # INCREASED from 127 for more motion
-                noise_aug_strength=0.1, # Increased for more variety
+                motion_bucket_id=127, # LOWERED from 180 to reduce "melting" artifacts
+                noise_aug_strength=0.02, # LOWERED from 0.1 to keep details sharp
                 generator=generator
             ).frames[0]
 
         # 4. Save to MP4
         frames_np = [np.array(f) for f in frames]
-        imageio.mimsave(output_path, frames_np, fps=7)
+        imageio.mimsave(output_path, frames_np, fps=25)
         
         print(f"AI Video saved to {output_path}")
         return output_path
