@@ -1,16 +1,23 @@
 import os
 import torch
 import random
-from diffusers import WanPipeline
-from diffusers.quantizers import PipelineQuantizationConfig
+import diffusers
+print(f"DEBUG: Diffusers version: {diffusers.__version__}")
+# The official class name in latest diffusers is LTXPipeline
+try:
+    from diffusers import LTXPipeline
+except ImportError:
+    # Older community implementation support
+    from diffusers import LTXVideoPipeline as LTXPipeline
+
 from PIL import Image
 import numpy as np
 import imageio
 
 class ImageToVideoModel:
-    def __init__(self, model_id="Wan-AI/Wan2.1-I2V-14B-720P-Diffusers"):
-        # The 14B model is the absolute King of Realism.
-        # We use 4-bit quantization to fit this monster into the A10G's 24GB VRAM.
+    def __init__(self, model_id="Lightricks/LTX-Video"):
+        # LTX-Video is the new standard for realistic, efficient video generation.
+        # It handles motion and realism significantly better than older UNet models.
         self.model_id = model_id
         self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -18,38 +25,24 @@ class ImageToVideoModel:
 
     def load_model(self):
         """
-        Loads Wan-2.1-14B with 4-bit quantization.
+        Loads LTX-Video.
         """
         if self.pipeline:
             return
 
-        print(f"Loading Wan-2.1 14B ({self.model_id}) on {self.device}...")
+        print(f"Loading LTX-Video ({self.model_id}) on {self.device}...")
         
         try:
-            # High-performance 4-bit quantization for 14B parameters
-            quant_config = PipelineQuantizationConfig(
-                quant_backend="bitsandbytes_4bit",
-                quant_kwargs={
-                    "load_in_4bit": True, 
-                    "bnb_4bit_compute_dtype": torch.float16,
-                    "bnb_4bit_use_double_quant": True,
-                    "bnb_4bit_quant_type": "nf4"
-                },
-                components_to_quantize=["transformer"],
-            )
-
-            self.pipeline = WanPipeline.from_pretrained(
+            self.pipeline = LTXPipeline.from_pretrained(
                 self.model_id, 
-                quantization_config=quant_config,
-                torch_dtype=torch.float16,
-                low_cpu_mem_usage=True, # Critical to prevent OOM kills on A10G Small RAM
+                torch_dtype=torch.bfloat16 if self.device == "cuda" else torch.float32,
             )
             
-            # Offloading is still recommended for 14B to ensure 24GB safety
             if self.device == "cuda":
+                # Helps with memory
                 self.pipeline.enable_model_cpu_offload()
             
-            print(">>> REAL AI: Wan-2.1 14B Loaded successfully.")
+            print(">>> REAL AI: LTX-Video Loaded successfully.")
         except Exception as e:
             print(f"CRITICAL ERROR LOADING MODEL: {e}")
             import traceback
@@ -58,8 +51,8 @@ class ImageToVideoModel:
 
     def generate(self, image_path: str, output_path: str, prompt="", num_frames=81):
         """
-        Generates animation using Wan-2.1.
-        Wan defaults to 81 frames (~5-6 seconds).
+        Generates animation using LTX-Video.
+        LTX-Video handles 0.5s to 5s generations. 81 frames is ~3-4 seconds.
         """
         if not self.pipeline:
             raise Exception("Model not loaded. Call load_model() first.")
@@ -67,12 +60,13 @@ class ImageToVideoModel:
         if self.pipeline == "mock":
             return self._generate_mock(image_path, output_path)
 
-        print(f">>> REAL AI: Generating Wan-2.1 animation for {image_path}...")
+        print(f">>> REAL AI: Generating LTX-Video animation for {image_path}...")
         
         # 1. Load and prepare image
         img = Image.open(image_path).convert("RGB")
-        # Wan-2.1 prefers 832x480 or 1280x720
-        img = img.resize((832, 480))
+        # LTX-Video prefers multiples of 32. 704x480 is a good medium.
+        # It also handles 512x512 or 768x512.
+        img = img.resize((768, 512))
         
         # 2. Random Seed
         seed = random.randint(0, 1000000)
@@ -80,22 +74,25 @@ class ImageToVideoModel:
         print(f">>> REAL AI: Using seed: {seed}")
 
         # 3. Run Pipeline
-        full_prompt = prompt if prompt else "cinematic high quality motion, photorealistic"
+        full_prompt = prompt if prompt else "cinematic high quality motion, realistic"
         
         with torch.no_grad():
+            # LTX-Video I2V uses image as the 'image' argument
             output = self.pipeline(
                 prompt=full_prompt,
                 image=img,
-                num_frames=num_frames,
+                num_frames=num_frames, # 81 frames
+                width=768,
+                height=512,
                 num_inference_steps=30,
-                guidance_scale=5.0,
+                guidance_scale=4.0,
                 generator=generator
             )
             frames = output.frames[0]
 
         # 4. Save to MP4
         frames_np = [np.array(f) for f in frames]
-        imageio.mimsave(output_path, frames_np, fps=16) # Wan standard fps
+        imageio.mimsave(output_path, frames_np, fps=24) # Smooth 24fps
         
         print(f"AI Video saved to {output_path}")
         return output_path
