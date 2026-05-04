@@ -1,4 +1,4 @@
-# Fix for Windows and Linux compatibility
+# Core AI stack
 torch
 torchvision
 diffusers==0.32.1
@@ -8,11 +8,12 @@ sentencepiece
 bitsandbytes
 imageio[ffmpeg]
 pillow
+# Web server
 python-dotenv
-rq
-redis
 fastapi
 uvicorn
 python-multipart
+# Model / tokenization support
 tiktoken
 protobuf
+hf_transfer

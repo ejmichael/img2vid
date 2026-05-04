@@ -1,11 +1,12 @@
-# Base image with CUDA 12.1 (Best for SVD)
+# Base image with CUDA 12.1
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
-# Install System dependencies
+# Install system dependencies (Node.js for frontend build, no Redis needed)
 RUN apt-get update && apt-get install -y \
     python3.10 \
     python3-pip \
-    redis-server \
+    nodejs \
+    npm \
     ffmpeg \
     libsm6 \
     libxext6 \
@@ -26,18 +27,21 @@ RUN pip3 install --force-reinstall torch==2.5.1 torchvision==0.20.1 --index-url 
 # Upgrade AI libraries AFTER torch to prevent downgrades
 RUN pip3 install -U diffusers transformers accelerate
 
-# Copy project files
+# Copy and build frontend
+COPY frontend/ ./frontend/
+RUN cd frontend && npm ci && npm run build
+
+# Copy backend and start script
 COPY backend/ ./backend/
-COPY frontend/dist/ ./frontend-dist/
 COPY start.sh ./
 RUN chmod +x start.sh
 
 # Environment
-ENV REDIS_URL=redis://localhost:6379
-ENV PORT=7860
+ENV PORT=8000
 ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+ENV HF_HUB_ENABLE_HF_TRANSFER=1
 
-# HF Spaces requires port 7860
-EXPOSE 7860
+# RunPod HTTP proxy port
+EXPOSE 8000
 
 CMD ["./start.sh"]

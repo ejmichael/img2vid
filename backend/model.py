@@ -40,8 +40,8 @@ class ImageToVideoModel:
             )
             
             if self.device == "cuda":
-                # Helps with memory
-                self.pipeline.enable_model_cpu_offload()
+                # Keep in VRAM to avoid HF System RAM limit OOM
+                self.pipeline.to("cuda")
             
             print(">>> REAL AI: LTX-Video Loaded successfully.")
         except Exception as e:
@@ -90,6 +90,9 @@ class ImageToVideoModel:
                 generator=generator
             )
             frames = output.frames[0]
+            
+            if self.device == "cuda":
+                torch.cuda.empty_cache()
 
         # 4. Save to MP4
         frames_np = [np.array(f) for f in frames]

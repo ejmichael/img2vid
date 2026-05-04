@@ -1,0 +1,6 @@
+{
+  "/api/generate/route": "/api/generate",
+  "/api/status/[jobId]/route": "/api/status/[jobId]",
+  "/_not-found/page": "/_not-found",
+  "/page": "/"
+}

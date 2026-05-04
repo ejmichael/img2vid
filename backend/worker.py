@@ -31,7 +31,9 @@ def process_image_job(image_path, job_id, prompt):
         model_instance.generate(image_path, output_path, prompt=prompt)
         return {"status": "done", "video_path": output_path}
     except Exception as e:
-        print(f"Error in worker job {job_id}: {e}")
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"CRITICAL ERROR in worker job {job_id}:\n{error_trace}")
         return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
