@@ -1,23 +1,23 @@
-const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY!;
-const RUNPOD_ENDPOINT_ID = process.env.RUNPOD_ENDPOINT_ID!;
-const BASE_URL = `https://api.runpod.io/v2/${RUNPOD_ENDPOINT_ID}`;
+const getBaseUrl = () =>
+  `https://api.runpod.ai/v2/${process.env.RUNPOD_ENDPOINT_ID}`;
 
 export async function submitRunPodJob(
   imageBase64: string,
   prompt: string
 ): Promise<string> {
-  const res = await fetch(`${BASE_URL}/run`, {
+  const url = `${getBaseUrl()}/run`;
+  console.log("[runpod] POST", url, "key:", process.env.RUNPOD_API_KEY?.slice(0, 10) + "...");
+  const res = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${RUNPOD_API_KEY}`,
+      Authorization: `Bearer ${process.env.RUNPOD_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       input: {
         image: imageBase64,
         prompt,
-        negative_prompt:
-          "worst quality, inconsistent motion, blurry, jittery, distorted",
+        negative_prompt: "",
         num_frames: 25,
         num_inference_steps: 8,
         guidance_scale: 1.0,
@@ -46,8 +46,8 @@ export async function getRunPodStatus(runpodJobId: string): Promise<{
   result?: string;
   error?: string;
 }> {
-  const res = await fetch(`${BASE_URL}/status/${runpodJobId}`, {
-    headers: { Authorization: `Bearer ${RUNPOD_API_KEY}` },
+  const res = await fetch(`${getBaseUrl()}/status/${runpodJobId}`, {
+    headers: { Authorization: `Bearer ${process.env.RUNPOD_API_KEY}` },
   });
 
   if (!res.ok) {

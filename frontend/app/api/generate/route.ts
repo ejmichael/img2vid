@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       (process.env.PROVIDER as "huggingface" | "runpod") ?? "huggingface";
     const jobId = randomUUID();
 
+    console.log("[debug] provider:", provider, "endpoint:", process.env.RUNPOD_ENDPOINT_ID);
     if (provider === "runpod") {
       const runpodJobId = await submitRunPodJob(imageBase64, prompt);
       createJob(jobId, "runpod", runpodJobId);

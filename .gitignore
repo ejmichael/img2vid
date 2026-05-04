@@ -1,4 +1,5 @@
 # Python
+<<<<<<< HEAD
 __pycache__/
 *.py[cod]
 *$py.class
@@ -17,5 +18,20 @@ frontend/node_modules/
 # so it's NOT ignored anymore.
 
 # OS junk
+=======
+backend/venv/
+backend/__pycache__/
+backend/inputs/*
+backend/outputs/*
+.env
+
+# Node
+frontend/node_modules/
+# Note: In a combined deployment, we WANT to upload the 'dist' folder 
+# because HF Docker build needs it.
+# frontend/dist/ # REMOVED FROM IGNORE
+
+# System
+>>>>>>> acf77ad9603785ec6b875a72ef483968aa79d4f2
 .DS_Store
 Thumbs.db

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Core AI stack
 torch
 torchvision
@@ -17,3 +18,20 @@ python-multipart
 tiktoken
 protobuf
 hf_transfer
+=======
+fastapi
+uvicorn
+rq
+redis
+python-multipart
+# Add PyTorch and Diffusers separately if needed for specific hardware
+torch
+diffusers
+transformers
+imageio
+imageio-ffmpeg
+pillow
+python-dotenv
+accelerate
+torchvision
+>>>>>>> acf77ad9603785ec6b875a72ef483968aa79d4f2

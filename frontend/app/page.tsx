@@ -187,7 +187,7 @@ export default function Home() {
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
             >
               Generate Video
             </button>

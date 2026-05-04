@@ -42,10 +42,7 @@ def handler(job):
 
     image_b64: str = inp["image"]
     prompt: str = inp["prompt"]
-    negative_prompt = inp.get(
-        "negative_prompt",
-        "worst quality, inconsistent motion, blurry, jittery, distorted",
-    )
+    negative_prompt = inp.get("negative_prompt", "")
     num_frames = int(inp.get("num_frames", 25))
     num_inference_steps = int(inp.get("num_inference_steps", 8))
     guidance_scale = float(inp.get("guidance_scale", 1.0))

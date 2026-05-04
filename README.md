@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: AI Image Animator
 emoji: 🎥
@@ -7,6 +8,8 @@ sdk: docker
 pinned: false
 ---
 
+=======
+>>>>>>> acf77ad9603785ec6b875a72ef483968aa79d4f2
 # Image-to-Video AI Web App
 
 A full-stack application that converts a single uploaded image into a short (2–4 second) animated video clip using AI.

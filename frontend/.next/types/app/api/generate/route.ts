@@ -1,4 +1,4 @@
-// File: D:\Dev\img-vid\webapp\app\api\generate\route.ts
+// File: D:\Dev\img-vid\frontend\app\api\generate\route.ts
 import * as entry from '../../../../../app/api/generate/route.js'
 import type { NextRequest } from 'next/server.js'
 

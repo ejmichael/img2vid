@@ -1,4 +1,4 @@
-// File: D:\Dev\img-vid\webapp\app\api\status\[jobId]\route.ts
+// File: D:\Dev\img-vid\frontend\app\api\status\[jobId]\route.ts
 import * as entry from '../../../../../../app/api/status/[jobId]/route.js'
 import type { NextRequest } from 'next/server.js'
 
