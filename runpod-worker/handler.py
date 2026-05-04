@@ -30,6 +30,7 @@ pipe = LTXImageToVideoPipeline.from_pretrained(
     MODEL_CACHE,
     torch_dtype=torch.bfloat16,
     local_files_only=True,
+    attn_implementation="eager",
 )
 pipe.to("cuda")
 pipe.enable_vae_slicing()
