@@ -1,8 +1,10 @@
+import os
+os.environ["TORCHDYNAMO_DISABLE"] = "1"  # prevents flash-attn infer_schema crash on PyTorch 2.4
+
 import runpod
 import torch
 import base64
 import io
-import os
 import tempfile
 from pathlib import Path
 from PIL import Image
